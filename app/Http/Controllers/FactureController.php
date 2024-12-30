@@ -33,6 +33,64 @@ class FactureController extends Controller
 
         return $factures;
     }
+    public function displayPayments(Request $request, $doctor_id)
+    {
+        $doctor = DB::table('users')->where('id', $doctor_id)->value('name');
+        $typeFilter = $request->input('type_filter', 'Tout');
+        
+        // Initialize queries
+        $paymentsQuery = DB::table('payments')
+            ->join('factures as f', 'f.id', '=', 'payments.facture_id')
+            ->join('consultations as c', 'c.id', '=', 'f.consultation_id')
+            ->join('patients as p', 'p.id', '=', 'c.patient_id')
+            ->where('c.doctor_id', '=', $doctor_id)
+            ->select(
+                'payments.created_at',
+                'payments.amount',
+                'payments.type',
+                'f.uid as facture_uid',
+                'p.name as patient_name'
+            );
+    
+        $chargesQuery = DB::table('charges')
+            ->select(
+                'charges.created_at',
+                DB::raw("charges.montant as amount"), // Alias for consistency
+                DB::raw("'Sorties' as type"),
+                DB::raw("NULL as facture_uid"),
+                DB::raw("NULL as patient_name")
+            );
+    
+        // Apply date filters if they are not empty
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        
+        if (!empty($startDate) && !empty($endDate)) {
+            $paymentsQuery->whereRaw(
+                "STR_TO_DATE(payments.created_at, '%d/%m/%Y') BETWEEN ? AND ?",
+                [$startDate, $endDate]
+            );
+        
+            $chargesQuery->whereRaw(
+                "STR_TO_DATE(charges.created_at, '%d/%m/%Y') BETWEEN ? AND ?",
+                [$startDate, $endDate]
+            );
+        }
+    
+        // Filter by type
+        if ($typeFilter === 'Entrées') {
+            $transactions = $paymentsQuery->get();
+        } elseif ($typeFilter === 'Sorties') {
+            $transactions = $chargesQuery->get();
+        } else {
+            $transactions = $paymentsQuery
+                ->union($chargesQuery)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+    
+        return view('DataTablePayments', compact('transactions', 'doctor_id', 'doctor'));
+    }
 
     /**
      * Show the form for creating a new resource.

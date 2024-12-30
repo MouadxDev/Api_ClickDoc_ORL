@@ -22,6 +22,46 @@ class PatientController extends Controller
         }
     }
 
+    public function displayPatients(Request $request)
+    {
+        // Retrieve query parameters
+        $uid = $request->input('uid');
+        $sex = $request->input('sex');
+        $start_date = $request->input('start_date');
+        $end_date = $request->input('end_date');
+    
+        // Build the query dynamically
+        $query = Patient::query();
+    
+        if ($uid) {
+            $query->where('uid', 'like', "%{$uid}%");
+        }
+    
+        if ($sex) {
+            $query->where('sex', $sex);
+        }
+    
+        if ($start_date) {
+            $query->whereRaw(
+                "STR_TO_DATE(date_of_birth, '%d/%m/%Y') >= ?",
+                [$start_date]
+            );
+        }
+    
+        if ($end_date) {
+            $query->whereRaw(
+                "STR_TO_DATE(date_of_birth, '%d/%m/%Y') <= ?",
+                [$end_date]
+            );
+        }
+    
+        // Paginate results (10 per page)
+        $patients = $query->paginate(10);
+    
+        // Pass current filters back to the view
+        return view('patient_list', compact('patients', 'uid', 'sex', 'start_date', 'end_date'));
+    }
+    
     /**
      * Show the form for creating a new resource.
      */

@@ -35,26 +35,41 @@ class RendezVous extends Controller
 		
         if(request()->has("date"))
         {
-            return ModelsRendezVous::join("patients as p", "p.id",'=',"rendez_vouses.patient_id")
-            ->join("acte_medicals as a",'a.id','=',"rendez_vous.type")
-            ->select("p.name","p.surname","rendez_vouses.*",'a.libelle as type')
-            ->whereDate("rendez-vouses.date",Carbon::parse(request()->date)->format('d/m/Y'))
-            ->where("rendez_vouses.doctor_id",'=',$doctor->id)
-            ->orderBy("rendez_vouses.heure",'asc')
-            ->get();
+            return ModelsRendezVous::join("patients as p", "p.id", '=', "rendez_vouses.patient_id")
+                ->join("acte_medicals as a", 'a.id', '=', "rendez_vouses.type")
+                ->select(
+                    "p.name", 
+                    "p.surname", 
+                    "p.uid", // Fetch the UID from the patients table
+                    "rendez_vouses.*", 
+                    "a.libelle as type"
+                )
+                ->whereDate("rendez_vouses.date", Carbon::parse(request()->date)->format('d/m/Y'))
+                ->where("rendez_vouses.doctor_id", '=', $doctor->id)
+                ->orderBy("rendez_vouses.heure", 'asc')
+                ->get();
         }
+        
         if(request()->has("month"))
         {
-            return ModelsRendezVous::join("patients as p", "p.id",'=',"rendez_vouses.patient_id")
-            ->join("acte_medicals as a",'a.id','=',"rendez_vouses.type")
-            ->select("p.name","p.surname","rendez_vouses.*",'a.libelle as type')
-            ->where("rendez_vouses.doctor_id",'=',$doctor->id)
-            ->orderBy("rendez_vouses.heure",'asc')
-            ->get()->filter(function($item){
-                $date = explode("/",$item -> date);
-                if($date[1]==request()->month) return $item;
-            });
+            return ModelsRendezVous::join("patients as p", "p.id", '=', "rendez_vouses.patient_id")
+                ->join("acte_medicals as a", 'a.id', '=', "rendez_vouses.type")
+                ->select(
+                    "p.name", 
+                    "p.surname", 
+                    "p.uid", // Fetch the UID from the patients table
+                    "rendez_vouses.*", 
+                    "a.libelle as type"
+                )
+                ->where("rendez_vouses.doctor_id", '=', $doctor->id)
+                ->orderBy("rendez_vouses.heure", 'asc')
+                ->get()
+                ->filter(function ($item) {
+                    $date = explode("/", $item->date);
+                    if ($date[1] == request()->month) return $item;
+                });
         }
+        
     }
 
     /**
@@ -152,6 +167,13 @@ class RendezVous extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $rendez_vous = ModelsRendezVous::find($id);
+        if ($rendez_vous) {
+            $rendez_vous->delete();
+            return response()->json(['message' => 'Rendez-vous supprimé avec succès.'], 200);
+        } else {
+            return response()->json(['message' => 'Rendez-vous introuvable.'], 404);
+        }
     }
+    
 }
