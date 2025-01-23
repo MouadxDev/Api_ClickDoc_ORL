@@ -38,6 +38,7 @@ use App\Http\Controllers\TasksController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\PrintController;
+use App\Http\Controllers\StockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -92,7 +93,8 @@ Route::prefix("/v1")->middleware('auth:sanctum')->group(function (){
     Route::resource("/tasks",TasksController::class);
     Route::resource("/tableau-perso",TableauPersonaliseController::class);
     
-    
+    Route::resource('/stock', StockController::class);
+
     Route::resource("/licence",EntityController::class);
     Route::resource("/users",UsersController::class);
 
@@ -102,7 +104,6 @@ Route::prefix("/v1")->middleware('auth:sanctum')->group(function (){
     Route::post('/rendez-vous/request',[RendezVous::class,'is_today']);
     Route::get("/patient/search/{id}",[PatientController::class, "search"]);
 	Route::get("/reporting/{type}",[ReportingController::class, "reports"]);
-	
 	
 	Route::get("/certificat/{type}/{id}/{docteur}",[PrintController::class,"certificat"]);
 	
